@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>글 목록</title>
+    <style>
+        table {
+            width: 50%;
+            border-collapse: collapse;
+            margin: 20px auto;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th { background-color:pink; }
+
+        h1, h2 {
+            text-align: center;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 10px;
+            margin: 0 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>글 목록</h1>
+
+    <div id="postDetails"></div>
+
+    <div class="button-container">
+        <button id="editButton">글 수정</button>
+        <button id="deleteButton">글 삭제</button>
+    </div>
+
+    <script>
+        function fetchPostDetails(num) {
+            fetch(`view.php?num=${num}`)
+                .then(response => response.json())
+                .then(data => {
+                    const postDetails = document.getElementById('postDetails');
+                    const post = data.post;
+
+                    postDetails.innerHTML = `
+                        <h2>${post.title}</h2>
+                        <table>
+                            <tr><th>작성자</th><td>${post.writer}</td></tr>
+                            <tr><th>작성일시</th><td>${post.regtime}</td></tr>
+                            <tr><th>조회수</th><td>${post.hits}</td></tr>
+                            <tr><th>내용</th><td>${post.content}</td></tr>
+                            <tr><th>사진</th><td><img src="${post.picture}"></td></tr>
+                        </table>
+                    `;
+
+                    // 글 수정 버튼 이벤트 리스너
+                    document.getElementById('editButton').addEventListener('click', function() {
+                        location.href = `write.php?num=${post.num}&page=${data.pagination.currentPage}`;
+                    });
+
+                    // 글 삭제 버튼 이벤트 리스너
+                    document.getElementById('deleteButton').addEventListener('click', function() {
+                        if (confirm('정말로 삭제하시겠습니까?')) {
+                            location.href = `delete.php?num=${post.num}&page=${data.pagination.currentPage}`;
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching post details:', error);
+                });
+        }
+
+        // 페이지 로드 시 초기 데이터를 불러옴
+        const urlParams = new URLSearchParams(window.location.search);
+        const postNum = urlParams.get('num);
+        fetchPostDetails(postNum);
+    </script>
+</body>
+</html>
+'

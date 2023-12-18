@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>펫 다이어리</title>
+    <style>
+        table {
+            width: 80%;
+            border-collapse: collapse;
+            margin: 20px auto;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 50px;
+		font-weight:bold;
+		color: sandybrown;
+        }
+
+        .post-container {
+            margin-bottom: 20px;
+        }
+        th        { background-color:pink; }
+        a         { text-decoration:none; }    
+        a:link    { color:blue; }
+        a:visited { color:blue; }
+		a:hover   { color:red;  }
+    </style>
+</head>
+<body>
+    <h1>펫 다이어리</h1>
+
+    <div id="postList"></div>
+
+    <div>
+        <!-- 글쓰기 버튼 -->
+        <button onclick="location.href='write.php'">글쓰기</button>
+    </div>
+
+    <script>
+        // 페이지 로드 시 게시물 목록을 불러오는 함수
+        function fetchPosts(page) {
+            fetch(`list.php?page=${page}`)
+                .then(response => response.json())
+                .then(data => {
+                    const postList = document.getElementById('postList');
+                    postList.innerHTML = '';
+
+                    data.posts.forEach(post => {
+                        postList.innerHTML += `
+                            <div class="post-container">
+                                <table>
+                                    <tr><th>제목</th><td><a href="view.html?num=${post.num}&page=${page}&hits=${post.hits + 1}">${post.title}</a></td></tr>
+                                    <tr><th>번호</th><td>${post.num}</td></tr>
+                                    <tr><th>작성자</th><td>${post.writer}</td></tr>
+                                    <tr><th>작성일시</th><td>${post.regtime}</td></tr>
+                                    <tr><th>조회수</th><td>${post.hits}</td></tr>
+                                </table>
+                            </div>
+                        `;
+                    });
+
+                    // 페이징 정보 출력
+                    const pagination = data.pagination;
+                    console.log(`현재 페이지: ${pagination.currentPage}, 전체 페이지: ${pagination.totalPages}`);
+                });
+        }
+
+        // 페이지 로드 시 초기 데이터를 불러옴
+        fetchPosts(1);
+    </script>
+</body>
+</html>
