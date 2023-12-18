@@ -1,112 +1,61 @@
-<!doctype html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <style>
-        table     { width:800px; text-align:center; margin-left:auto; margin-right:auto;font-size: 20px}
-		table1    { width:800px; text-align:right; font-size: 20px}
-		
-        th        { background-color:pink; }
-        
-        .num      { width: 80px; }
-        .title    { width:230px; }
-        .writer   { width:100px; }
-        .regtime  { width:230px; }
+<?php
+require("db_connect.php");
 
-        a         { text-decoration:none; }    
-        a:link    { color:blue; }
-        a:visited { color:blue; }
-		a:hover   { color:red;  }
-       
-        .center     { text-align:center; }
-		
-		h1{
-		font-size: 50px;
-		font-weight:bold;
-		color: sandybrown;
-	}
-    </style>
+// 페이지 및 목록 크기 설정
+$listSize = 5;
+$page = $_GET["page"] ?? 1;
+$start = ($page - 1) * $listSize;
+
+// 데이터베이스에서 게시물 가져오기
+$query = $db->query("SELECT * FROM board ORDER BY num DESC LIMIT $start, $listSize");
+$posts = $query->fetchAll(PDO::FETCH_ASSOC);
+
+// 페이징을 위한 전체 게시물 수 가져오기
+$totalPostsQuery = $db->query("SELECT COUNT(*) FROM board");
+$totalPosts = $totalPostsQuery->fetchColumn();
+
+// 페이징 정보 구성
+$pagination = [
+    "currentPage" => $page,
+    "totalPages" => ceil($totalPosts / $listSize),
+];
+
+// JSON 형식으로 응답
+header("Content-Type: application/json");
+echo json_encode(["posts" => $posts, "pagination" => $pagination]);
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>게시판</title>
 </head>
 <body>
-<div style="text-align : center; margin-right:right;">
-<h1><a href="list.php">일기장</a></h1></div>
+    <h1>게시판</h1>
 
-<table>
+    <div id="postList"></div>
 
-    <tr>
-        <th class="num"    >번호    </th>
-        <th class="title"  >제목    </th>
-        <th class="writer" >작성자  </th>
-        <th class="regtime">작성일시</th>
-        <th>                조회수  </th>
-    </tr>
-	
-<?php
-   $listSize = 5; //글은 5개씩만 보여줘라
-   
-   $page = $_REQUEST["page"] ?? 1; //주소 페이지 창  ?page = 2,3,4 붙이면 다음 장 넘어감
-   $start = ($page - 1) * $listSize; //페이지 시작 계산법
-   
-   require("db_connect.php");
-                       //페이지 목록정렬 limit //
-   $query = $db -> query("select * from board order by num desc limit $start,$listSize");
-   while ($row = $query->fetch()){
-	   $hits = $row["hits"];
-?>
-    <tr>
-        <td><?=$row["num"]?></td>
-        <td style="text-align:left;"><a href="view.php?num=<?=$row["num"]?>&page=<?=$page?>&hits=<?=$hits+1?>"><?=$row["title"]?></a></td>
-        <td><?=$row["writer"]?></td>
-        <td><?=$row["regtime"]?></td>
-        <td><?=$row["hits"]?></td>
-    </tr>
-<?php
-	}
-?>
-<td><input type="button" value="글쓰기" onclick="location.href='write.php'"></td>
-</table>
+    <script>
+        // 페이지 로드 시 게시물 목록을 불러오는 함수
+        function fetchPosts(page) {
+            fetch(`list.php?page=${page}`)
+                .then(response => response.json())
+                .then(data => {
+                    const postList = document.getElementById('postList');
+                    postList.innerHTML = '';
 
-<br>
-<div style ="width:680px; text-align:center; margin-left:auto; margin-right:auto;"}> 
-<?php
-    $paginationSize = 3; //페이지 3개씩 보여주기
-	
-    $firstLink = floor(($page - 1) / $paginationSize) * $paginationSize + 1; //페이지네이션 처음 부분 계산법
-	$lastLink = $firstLink + $paginationSize - 1; //마지막 링크 번호
-	
-	$query = $db -> query("select count(*) from board"); //마지막 없는 페이지가 나오면 안되니까 하는 거
-    $row = $query->fetch();
-	$numRecords = $row[0];
-	// $numRecords = $db -> query("select count(*) from board")->fetch()[0];  //위에꺼 3줄이랑 똑같음
-	$numPages = ceil($numRecords / $listSize); //페이지 계산법 (전체 글 수 / listSize)
-	if ($lastLink > $numPages) { //나눴을 때 딱 안 떨어질 때 페이지 하나 반 올림ceil 해서 페이지 하나 만듬
-		$lastLink = $numPages;
-	}
-	
-	// 다음 -- 이전 페이지 목록 
-	if ($firstLink > 1){
-		$link = $firstLink - 1;
-	 echo "<a href=\"list.php?page=$link\">이전</a> ";
-	}
-	for ($i = $firstLink; $i <= $lastLink; $i++){
-        if ($i == $page) {                  //현재 페이지 밑줄
-			echo "<a href=\"list.php?page=$i\"><u>$i</u></a>  "; 
-		} else {			
-	        echo "<a href=\"list.php?page=$i\">$i</a> ";
-	    }
-	}
-	
-	if ($lastLink < $numPages){
-		$link = $lastLink + 1;
-	    echo "<a href=\"list.php?page=$link\">&nbsp다음</a> ";
-	}
-?>       
-	
-</div>
+                    data.posts.forEach(post => {
+                        postList.innerHTML += `<div><h3>${post.title}</h3><p>${post.content}</p></div>`;
+                    });
 
-<br>
+                    // 페이징 정보 출력
+                    const pagination = data.pagination;
+                    console.log(`현재 페이지: ${pagination.currentPage}, 전체 페이지: ${pagination.totalPages}`);
+                });
+        }
 
-<input type="button" value="메인 이동" onclick="location.href='hcmain.php'"
-style="display:block; width:200px; text-align:center;  margin-left:auto; margin-right:auto; font-size:20px; padding:5px;">
+        // 페이지 로드 시 초기 데이터를 불러옴
+        fetchPosts(1);
+    </script>
 </body>
 </html>
