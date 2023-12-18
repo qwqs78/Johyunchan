@@ -78,7 +78,7 @@
 		<th class="camera"><a href="camera.php">카메라 창</a></th>
 		<th class="eat"><a href="eat.php">사료 마켓</a></th>
 		<th class="health"><a href="health.php">배변 횟수</a></th>
-        <th class="question"><a href="list.html">일기장</a></th>
+        <th class="question"><a href="list.html">펫 다이어리</a></th>
 	</tr>
 </table>
 </h2>
